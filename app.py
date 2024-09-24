@@ -6,7 +6,7 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import os
 
-df = pd.read_csv('../data.csv')
+df = pd.read_csv('data/data.csv')
 df.columns = df.columns.str.strip()
 
 app = dash.Dash(__name__)
