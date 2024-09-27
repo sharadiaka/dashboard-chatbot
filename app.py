@@ -4,50 +4,438 @@ import pandas as pd
 import plotly.express as px
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 
-df = pd.read_csv('data/data.csv')
+df = pd.read_csv("data/data.csv")
 df.columns = df.columns.str.strip()
+
+media_tempo_conversa = df["tempo_estimado_conversa"].mean()
+media_mensagens_por_conversa = df["media_mensagens_por_conversa"].mean()
 
 app = dash.Dash(__name__)
 
-if not os.path.exists('assets'):
-    os.makedirs('assets')
+if not os.path.exists("assets"):
+    os.makedirs("assets")
 
-wordcloud = WordCloud(width=800, height=400, background_color='white').generate(' '.join(df['palavras_mais_usadas']))
-wordcloud.to_file('assets/wordcloud.png')
 
-app.layout = html.Div(children=[
-    html.H1('Dashboard do Chatbot'),
-    
-    dcc.Graph(id='respostas-por-dia', figure=px.line(df, x='data', y='respostas', title='Número de Respostas por Dia')),
-    
-    dcc.Graph(id='media-conversas-por-dia', figure=px.line(df, x='data', y='media_conversas_por_dia', title='Número Médio de Conversas por Dia')),
+wordcloud = WordCloud(width=800, height=400, background_color="#fefefc").generate(
+    " ".join(df["palavras_mais_usadas"])
+)
+wordcloud.to_file("assets/wordcloud.png")
 
-    dcc.Graph(id='mapa-origem', figure=px.bar(df, x='local', y='total_interacoes', title='Origem das Conversas')),
-    
-    dcc.Graph(id='total-diario', figure=px.bar(df, x='data', y='respostas', title='Total de Conversas por Dia')),
-    
-    dcc.Graph(id='feedback', figure=px.pie(df, names='feedback', title='Distribuição de Feedback')),
+dias_semana = ["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"]
+horas = [
+    "00:00",
+    "02:00",
+    "04:00",
+    "06:00",
+    "08:00",
+    "10:00",
+    "12:00",
+    "14:00",
+    "16:00",
+    "18:00",
+    "20:00",
+    "22:00",
+]
+dados_heatmap = np.random.randint(0, 10, size=(12, 7))
 
-    html.Img(src='/assets/wordcloud.png', style={'height': '400px'}),
+heatmap_fig = px.imshow(
+    dados_heatmap,
+    labels=dict(x="Dia da Semana", y="Hora do Dia", color="Conversas"),
+    x=dias_semana,
+    y=horas,
+    color_continuous_scale="Blues",
+    title="Distribuição de Conversas por Hora e Dia",
+    aspect="auto",
+)
 
-    dcc.Graph(id='demandas-dia-semana', figure=px.bar(df, x='data', y=['demanda_diaria', 'demanda_semanal'], title='Demandas por Dia e Semana')),
+heatmap_fig.update_layout(
+    plot_bgcolor="rgba(255, 255, 255, 0.9)",
+    paper_bgcolor="rgba(255, 255, 255, 0.9)",
+)
 
-    dcc.Graph(id='avaliacao-conversa', figure=px.bar(df, x='data', y='avaliacao_conversa', title='Avaliação da Conversa')),
+feedback_counts = df["feedback"].value_counts().reset_index()
+feedback_counts.columns = ["feedback", "count"]
 
-    html.H3(f"Total de Conversas: {df['numero_total_conversas'].sum()}"),
+app.layout = html.Div(
+    children=[
+        html.Div(
+            [
+                html.Div(
+                    children=[
+                        html.Img(
+                            src="/assets/chart.svg",
+                            style={"width": "70%", "display": "flex"},
+                        ),
+                    ],
+                    style={"width": "50px", "gap": "10px"},
+                ),
+                html.H1("Dashboard"),
+            ],
+            style={
+                "background": "#08306b",
+                "color": "#FFF",
+                "padding": "30px",
+                "display": "flex",
+            },
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            ("Tempo Médio de Conversa:"),
+                            style={
+                                "margin-top": "10px",
+                                "margin-left": "20px",
+                                "margin-right": "20px",
+                                "margin-bottom": "10px",
+                            },
+                        ),
+                        html.Div(
+                            f"{media_tempo_conversa:.2f} min",
+                            style={"font-weight": "bold"},
+                        ),
+                    ],
+                    style={
+                        "height": "100px",
+                        "width": "14%",
+                        "background-color": "#fefefc",
+                        "border-radius": "20px",
+                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                        "transform": "translateY(-5px)",
+                        "display": "flex",
+                        "align-items": "center",
+                        "justify-content": "center",
+                        "flex-direction": "column",
+                    },
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            (f"Média de Mensagens por Conversa:"),
+                            style={
+                                "margin-top": "10px",
+                                "margin-left": "10px",
+                                "margin-right": "10px",
+                                "margin-bottom": "10px",
+                            },
+                        ),
+                        html.Div(
+                            (f"{media_mensagens_por_conversa:.2f}"),
+                            style={"font-weight": "bold"},
+                        ),
+                    ],
+                    style={
+                        "height": "100px",
+                        "width": "14%",
+                        "background-color": "#fefefc",
+                        "border-radius": "20px",
+                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                        "transform": "translateY(-5px)",
+                        "border-radius": "20px",
+                        "display": "flex",
+                        "align-items": "center",
+                        "justify-content": "center",
+                        "flex-direction": "column",
+                    },
+                ),
+            ],
+            style={
+                "margin-left": "25px",
+                "margin-top": "30px",
+                "display": "flex",
+                "align-items": "center",
+                "flex-direction": "row",
+                "gap": "20px",
+            },
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                dcc.Graph(
+                                    id="respostas-por-dia",
+                                    figure=px.line(
+                                        df,
+                                        x="data",
+                                        y="respostas",
+                                        title="Número de Respostas por Dia",
+                                    ).update_layout(
+                                        plot_bgcolor="rgba(255, 255, 255, 0.9)",
+                                        paper_bgcolor="rgba(255, 255, 255, 0.9)",
+                                    ),
+                                    style={
+                                        "height": "400px",
+                                        "width": "95%",
+                                        "margin": "10px auto",
+                                        "background-color": "#F8F8FF",
+                                        "border-radius": "40px",
+                                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                        "transform": "translateY(-5px)",
+                                    },
+                                    config={"displayModeBar": False},
+                                ),
+                            ]
+                        ),
+                        html.Div(
+                            [
+                                dcc.Graph(
+                                    id="media-conversas-por-dia",
+                                    figure=px.line(
+                                        df,
+                                        x="data",
+                                        y="media_conversas_por_dia",
+                                        title="Número Médio de Conversas por Dia",
+                                    ).update_layout(
+                                        plot_bgcolor="rgba(255, 255, 255, 0.9)",
+                                        paper_bgcolor="rgba(255, 255, 255, 0.9)",
+                                    ),
+                                    style={
+                                        "height": "400px",
+                                        "width": "95%",
+                                        "margin": "10px auto",
+                                        "background-color": "#F8F8FF",
+                                        "border-radius": "40px",
+                                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                        "transform": "translateY(-5px)",
+                                    },
+                                    config={"displayModeBar": False},
+                                ),
+                            ]
+                        ),
+                        html.Div(
+                            [
+                                dcc.Graph(
+                                    id="mapa-origem",
+                                    figure=px.choropleth(
+                                        df,
+                                        geojson="https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson",
+                                        locations="local",
+                                        featureidkey="properties.name",
+                                        color="total_interacoes",
+                                        hover_name="local",
+                                        title="Origem das Conversas por Estado (Brasil)",
+                                        color_continuous_scale="Blues",
+                                        scope="south america",
+                                        center={"lat": -30, "lon": -58.9253},
+                                    ).update_layout(
+                                        plot_bgcolor="rgba(255, 255, 255, 0.9)",
+                                        paper_bgcolor="rgba(255, 255, 255, 0.9)",
+                                    ),
+                                    style={
+                                        "height": "810px",
+                                        "width": "95%",
+                                        "margin": "10px auto",
+                                        "background-color": "#F8F8FF",
+                                        "border-radius": "40px",
+                                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                        "transform": "translateY(-5px)",
+                                    },
+                                    config={"displayModeBar": False},
+                                ),
+                            ]
+                        ),
+                        html.Div(
+                            [
+                                dcc.Graph(
+                                    id="tempo-medio-chat",
+                                    figure=px.line(
+                                        df,
+                                        x="data",
+                                        y="tempo_medio_chat",
+                                        title="Tempo Médio de um Chat",
+                                    ).update_layout(
+                                        plot_bgcolor="rgba(255, 255, 255, 0.9)",
+                                        paper_bgcolor="rgba(255, 255, 255, 0.9)",
+                                    ),
+                                    style={
+                                        "height": "400px",
+                                        "width": "95%",
+                                        "margin": "10px auto",
+                                        "background-color": "#F8F8FF",
+                                        "border-radius": "40px",
+                                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                        "transform": "translateY(-5px)",
+                                    },
+                                    config={"displayModeBar": False},
+                                ),
+                            ]
+                        ),
+                    ],
+                    style={
+                        "width": "48%",
+                        "display": "inline-block",
+                        "vertical-align": "top",
+                    },
+                ),
+                html.Div(
+                    [
+                        dcc.Graph(
+                            id="total-diario",
+                            figure=px.bar(
+                                df,
+                                x="data",
+                                y="respostas",
+                                title="Total de Conversas por Dia",
+                            ).update_layout(
+                                plot_bgcolor="rgba(255, 255, 255, 0.9)",
+                                paper_bgcolor="rgba(255, 255, 255, 0.9)",
+                            ),
+                            style={
+                                "height": "400px",
+                                "width": "95%",
+                                "margin": "10px auto",
+                                "background-color": "#F8F8FF",
+                                "border-radius": "40px",
+                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                "transform": "translateY(-5px)",
+                            },
+                            config={"displayModeBar": False},
+                        ),
+                        dcc.Graph(
+                            id="heatmap",
+                            figure=heatmap_fig,
+                            style={
+                                "height": "400px",
+                                "width": "95%",
+                                "margin": "10px auto",
+                                "border-radius": "40px",
+                                "background-color": "#F8F8FF",
+                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                "transform": "translateY(-5px)",
+                            },
+                            config={"displayModeBar": False},
+                        ),
+                        dcc.Graph(
+                            id="demandas-dia-semana",
+                            figure=px.bar(
+                                df,
+                                x="data",
+                                y=["demanda_diaria", "demanda_semanal"],
+                                title="Demandas por Dia e Semana",
+                            ).update_layout(
+                                plot_bgcolor="rgba(255, 255, 255, 0.9)",
+                                paper_bgcolor="rgba(255, 255, 255, 0.9)",
+                            ),
+                            style={
+                                "height": "400px",
+                                "width": "95%",
+                                "margin": "10px auto",
+                                "background-color": "#F8F8FF",
+                                "border-radius": "40px",
+                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                "transform": "translateY(-5px)",
+                            },
+                            config={"displayModeBar": False},
+                        ),
+                        html.Div(
+                            html.Img(
+                                src="/assets/wordcloud.png",
+                                style={
+                                    "width": "95%",
+                                },
+                            ),
+                            style={
+                                "height": "400px",
+                                "width": "95%",
+                                "background-color": "#fefefc",
+                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                "transform": "translateY(-5px)",
+                                "margin": "10px auto",
+                                "display": "flex",
+                                "justify-content": "center",
+                                "align-items": "center",
+                            },
+                        ),
+                    ],
+                    style={
+                        "width": "48%",
+                        "display": "inline-block",
+                        "vertical-align": "top",
+                    },
+                ),
+                html.Div(
+                    [
+                        dcc.Graph(
+                            id="total-interacoes",
+                            figure=px.bar(
+                                df,
+                                x="data",
+                                y="total_interacoes",
+                                title="Total de Interações",
+                            ).update_layout(
+                                plot_bgcolor="rgba(255, 255, 255, 0.9)",
+                                paper_bgcolor="rgba(255, 255, 255, 0.9)",
+                            ),
+                            style={
+                                "height": "400px",
+                                "width": "31%",
+                                "margin": "10px auto",
+                                "background-color": "#F8F8FF",
+                                "border-radius": "40px",
+                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                "transform": "translateY(-5px)",
+                            },
+                            config={"displayModeBar": False},
+                        ),
+                        dcc.Graph(
+                            id="avaliacao-conversa",
+                            figure=px.bar(
+                                df,
+                                x="data",
+                                y="avaliacao_conversa",
+                                title="Avaliação da Conversa",
+                            ).update_layout(
+                                plot_bgcolor="rgba(255, 255, 255, 0.9)",
+                                paper_bgcolor="rgba(255, 255, 255, 0.9)",
+                            ),
+                            style={
+                                "height": "400px",
+                                "width": "31%",
+                                "margin": "10px auto",
+                                "background-color": "#F8F8FF",
+                                "border-radius": "40px",
+                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                "transform": "translateY(-5px)",
+                            },
+                            config={"displayModeBar": False},
+                        ),
+                        dcc.Graph(
+                            id="feedback",
+                            figure=px.bar(
+                                feedback_counts,
+                                x="feedback",
+                                y="count",
+                                title="Distribuição de Feedback",
+                            ).update_layout(
+                                plot_bgcolor="rgba(255, 255, 255, 0.9)",
+                                paper_bgcolor="rgba(255, 255, 255, 0.9)",
+                            ),
+                            style={
+                                "height": "400px",
+                                "width": "31%",
+                                "margin": "10px auto",
+                                "background-color": "#F8F8FF",
+                                "border-radius": "40px",
+                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                "transform": "translateY(-5px)",
+                            },
+                            config={"displayModeBar": False},
+                        ),
+                    ],
+                    style={
+                        "display": "flex",
+                    },
+                ),
+            ]
+        ),
+    ]
+)
 
-    dcc.Graph(id='media-mensagens-por-conversa', figure=px.bar(df, x='data', y='media_mensagens_por_conversa', title='Média de Mensagens por Conversa')),
-
-    dcc.Graph(id='tempo-estimado-conversa', figure=px.line(df, x='data', y='tempo_estimado_conversa', title='Tempo Estimado de Conversa')),
-
-    dcc.Graph(id='tempo-medio-chat', figure=px.line(df, x='data', y='tempo_medio_chat', title='Tempo Médio de um Chat')),
-    
-    dcc.Graph(id='total-interacoes', figure=px.bar(df, x='data', y='total_interacoes', title='Total de Interações')),
-
-    dcc.Graph(id='acuracia-respostas', figure=px.bar(df, x='data', y='acuracia_respostas', title='Acurácia das Respostas')),
-])
-
-if __name__ == '__main__':
-    app.run_server(debug=True)
+if __name__ == "__main__":
+    app.run_server(debug=True, use_reloader=True)
