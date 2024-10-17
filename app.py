@@ -4,7 +4,6 @@ from dash.dependencies import Input, Output
 import pandas as pd
 import plotly.express as px
 from wordcloud import WordCloud
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 
@@ -12,13 +11,16 @@ df = pd.read_csv("data/data.csv")
 df.columns = df.columns.str.strip()
 
 media_tempo_conversa = df["tempo_estimado_conversa"].mean()
+
+minutos = int(media_tempo_conversa)
+segundos = int((media_tempo_conversa - minutos) * 60)
+
 media_mensagens_por_conversa = df["media_mensagens_por_conversa"].mean()
 
 app = dash.Dash(__name__)
 
 if not os.path.exists("assets"):
     os.makedirs("assets")
-
 
 wordcloud = WordCloud(width=800, height=400, background_color="#fefefc").generate(
     " ".join(df["palavras_mais_usadas"])
@@ -77,24 +79,50 @@ app.layout = html.Div(
                 
             ],
             style={
-                "background": "#08306b",
-                "color": "#FFF",
+                "background": "#f1f2f1",
+                "color": "#000",
                 "padding": "30px",
                 "display": "flex",
             },
         ),
-        
+
         html.Div(
             [
+                html.H4("Filtros:"),
                 dcc.DatePickerRange(
                     id="date-picker",
                     min_date_allowed=df["data"].min(),
                     max_date_allowed=df["data"].max(),
                     start_date=df["data"].min(),
                     end_date=df["data"].max(),
+                    display_format='DD/MM/YYYY',
+                    style={"heigth":"30px"}
+                ),
+        
+                dcc.Dropdown(
+                    id='local-dropdown',
+                    options=[
+                        {'label': local, 'value': local} for local in df['local'].unique()
+                    ],
+                    placeholder="Filtrar por estado",                   
+                    multi=True,
+                    style={ "min-width":"240px", "max-width":"400px","min-height":"49px"},
+                ),
+                
+                dcc.Dropdown(
+                    id='feedback-dropdown',
+                    options=[
+                        {'label': 'Neutro', 'value': 'neutro'},
+                        {'label': 'Positivo', 'value': 'positivo'},
+                        {'label': 'Negativo', 'value': 'negativo'},
+                    ],
+                    
+                    placeholder="Filtrar por feedback",  
+                    multi=True,
+                    style={ "min-width":"240px", "max-width":"400px","min-height":"49px"},
                 ),
             ],
-            style={"margin": "20px"},
+            style={"margin": "20px", "gap":"10px", "display":"flex", "justify-content": "center", "align-items":"center"},
         ),
     
         html.Div(
@@ -114,15 +142,6 @@ app.layout = html.Div(
                                         plot_bgcolor="rgba(255, 255, 255, 0.9)",
                                         paper_bgcolor="rgba(255, 255, 255, 0.9)",
                                     ),
-                                    style={
-                                        "height": "400px",
-                                        "width": "95%",
-                                        "margin": "10px auto",
-                                        "background-color": "#F8F8FF",
-                                        "border-radius": "40px",
-                                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                        "transform": "translateY(-5px)",
-                                    },
                                     config={"displayModeBar": False},
                                 ),
                             ]
@@ -140,15 +159,6 @@ app.layout = html.Div(
                                         plot_bgcolor="rgba(255, 255, 255, 0.9)",
                                         paper_bgcolor="rgba(255, 255, 255, 0.9)",
                                     ),
-                                    style={
-                                        "height": "400px",
-                                        "width": "95%",
-                                        "margin": "10px auto",
-                                        "background-color": "#F8F8FF",
-                                        "border-radius": "40px",
-                                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                        "transform": "translateY(-5px)",
-                                    },
                                     config={"displayModeBar": False},
                                 ),
                             ]
@@ -172,15 +182,7 @@ app.layout = html.Div(
                                         plot_bgcolor="rgba(255, 255, 255, 0.9)",
                                         paper_bgcolor="rgba(255, 255, 255, 0.9)",
                                     ),
-                                    style={
-                                        "height": "810px",
-                                        "width": "95%",
-                                        "margin": "10px auto",
-                                        "background-color": "#F8F8FF",
-                                        "border-radius": "40px",
-                                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                        "transform": "translateY(-5px)",
-                                    },
+
                                     config={"displayModeBar": False},
                                 ),
                             ]
@@ -198,15 +200,7 @@ app.layout = html.Div(
                                         plot_bgcolor="rgba(255, 255, 255, 0.9)",
                                         paper_bgcolor="rgba(255, 255, 255, 0.9)",
                                     ),
-                                    style={
-                                        "height": "400px",
-                                        "width": "95%",
-                                        "margin": "10px auto",
-                                        "background-color": "#F8F8FF",
-                                        "border-radius": "40px",
-                                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                        "transform": "translateY(-5px)",
-                                    },
+
                                     config={"displayModeBar": False},
                                 ),
                             ]
@@ -226,69 +220,32 @@ app.layout = html.Div(
                     [
                         html.Div(
                             ("Tempo Médio de Conversa:"),
-                            style={
-                                "margin-top": "10px",
-                                "margin-left": "10px",
-                                "margin-right": "10px",
-                                "margin-bottom": "10px",
-                                "display": "flex",
-                                "align-items": "center",
-                                "justify-content": "center",
-                                
-                                
-                            },
+                            id="title_tempo_conversa",
                         ),
                         html.Div(
-                            f"{media_tempo_conversa:.2f} min",
+                            f"{minutos}:{segundos} min",
+                            id="tempo_conversa",
                             style={"font-weight": "bold", "font-size":"30px"},
                         ),
                     ],
-                    style={
-                        "height": "192px",
-                        "width": "90%",
-                        "background-color": "#fefefc",
-                        "border-radius": "20px",
-                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                        "transform": "translateY(-5px)",
-                        "display": "flex",
-                        "align-items": "center",
-                        "justify-content": "center",
-                        "flex-direction": "column",
-                    },
+                     className="metrics_in_text",
                 ),
                 html.Div(
                     [
                         html.Div(
                             (f"Média de Mensagens por Conversa:"),
-                            style={
-                                "margin-top": "10px",
-                                "margin-left": "20px",
-                                "margin-right": "10px",
-                                "margin-bottom": "10px",
-                            },
+                            id ="title_media_msg_conversa",
                         ),
                         html.Div(
                             (f"{media_mensagens_por_conversa:.2f}"),
+                            id ="media_msg_conversa",
                             style={"font-weight": "bold", "font-size":"30px"},
                         ),
                     ],
-                    style={
-                        "height": "192px",
-                        "width": "90%",
-                        "background-color": "#fefefc",
-                        "border-radius": "20px",
-                        "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                        "transform": "translateY(-5px)",
-                        "border-radius": "20px",
-                        "display": "flex",
-                        "align-items": "center",
-                        "justify-content": "center",
-                        "flex-direction": "column",
-                    },
+                    className="metrics_in_text",
                 ),
             ],
             style={
-            
                 "margin-top": "5px",
                 "display": "flex",
                 "align-items": "center",
@@ -303,35 +260,17 @@ app.layout = html.Div(
                             figure=px.bar(
                                 df,
                                 x="data",
-                                y="respostas",
+                                y="numero_total_conversas",
                                 title="Total de Conversas por Dia",
                             ).update_layout(
                                 plot_bgcolor="rgba(255, 255, 255, 0.9)",
                                 paper_bgcolor="rgba(255, 255, 255, 0.9)",
                             ),
-                            style={
-                                "height": "400px",
-                                "width": "95%",
-                                "margin": "10px auto",
-                                "background-color": "#F8F8FF",
-                                "border-radius": "40px",
-                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                "transform": "translateY(-5px)",
-                            },
                             config={"displayModeBar": False},
                         ),
                         dcc.Graph(
                             id="heatmap",
                             figure=heatmap_fig,
-                            style={
-                                "height": "400px",
-                                "width": "95%",
-                                "margin": "10px auto",
-                                "border-radius": "40px",
-                                "background-color": "#F8F8FF",
-                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                "transform": "translateY(-5px)",
-                            },
                             config={"displayModeBar": False},
                         ),
                         dcc.Graph(
@@ -345,15 +284,6 @@ app.layout = html.Div(
                                 plot_bgcolor="rgba(255, 255, 255, 0.9)",
                                 paper_bgcolor="rgba(255, 255, 255, 0.9)",
                             ),
-                            style={
-                                "height": "400px",
-                                "width": "95%",
-                                "margin": "10px auto",
-                                "background-color": "#F8F8FF",
-                                "border-radius": "40px",
-                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                "transform": "translateY(-5px)",
-                            },
                             config={"displayModeBar": False},
                         ),
                         html.Div(
@@ -363,17 +293,7 @@ app.layout = html.Div(
                                     "width": "95%",
                                 },
                             ),
-                            style={
-                                "height": "400px",
-                                "width": "95%",
-                                "background-color": "#fefefc",
-                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                "transform": "translateY(-5px)",
-                                "margin": "10px auto",
-                                "display": "flex",
-                                "justify-content": "center",
-                                "align-items": "center",
-                            },
+                            id = "word_cloud",
                         ),
                     ],
                     style={
@@ -395,15 +315,6 @@ app.layout = html.Div(
                                 plot_bgcolor="rgba(255, 255, 255, 0.9)",
                                 paper_bgcolor="rgba(255, 255, 255, 0.9)",
                             ),
-                            style={
-                                "height": "400px",
-                                "width": "31%",
-                                "margin": "10px auto",
-                                "background-color": "#F8F8FF",
-                                "border-radius": "40px",
-                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                "transform": "translateY(-5px)",
-                            },
                             config={"displayModeBar": False},
                         ),
                         dcc.Graph(
@@ -417,15 +328,6 @@ app.layout = html.Div(
                                 plot_bgcolor="rgba(255, 255, 255, 0.9)",
                                 paper_bgcolor="rgba(255, 255, 255, 0.9)",
                             ),
-                            style={
-                                "height": "400px",
-                                "width": "31%",
-                                "margin": "10px auto",
-                                "background-color": "#F8F8FF",
-                                "border-radius": "40px",
-                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                "transform": "translateY(-5px)",
-                            },
                             config={"displayModeBar": False},
                         ),
                         dcc.Graph(
@@ -439,15 +341,6 @@ app.layout = html.Div(
                                 plot_bgcolor="rgba(255, 255, 255, 0.9)",
                                 paper_bgcolor="rgba(255, 255, 255, 0.9)",
                             ),
-                            style={
-                                "height": "400px",
-                                "width": "31%",
-                                "margin": "10px auto",
-                                "background-color": "#F8F8FF",
-                                "border-radius": "40px",
-                                "box-shadow": "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                "transform": "translateY(-5px)",
-                            },
                             config={"displayModeBar": False},
                         ),
                     ],
@@ -470,23 +363,49 @@ app.layout = html.Div(
         Output("total-interacoes", "figure"),
         Output("avaliacao-conversa", "figure"),
         Output("feedback", "figure"),
+        Output("tempo_conversa", "children"),
+        Output("media_msg_conversa", "children") 
     ],
-    [Input("date-picker", "start_date"), Input("date-picker", "end_date")]
+    [
+        Input("date-picker", "start_date"),
+        Input("date-picker", "end_date"),
+        Input("local-dropdown", "value"),
+        Input("feedback-dropdown", "value"),
+    ]
 )
-def update_graphs(start_date, end_date):
+def update_graphs(start_date, end_date, selected_local, feedback_value):
     filtered_df = df[(df["data"] >= start_date) & (df["data"] <= end_date)]
+    
+    if selected_local:
+        filtered_df = filtered_df[filtered_df["local"].isin(selected_local)]
+        
+    if feedback_value:
+         filtered_df = filtered_df[filtered_df["feedback"].isin(feedback_value)]
+
+    media_tempo_conversa = filtered_df["tempo_estimado_conversa"].mean()
+    minutos = int(media_tempo_conversa)
+    segundos = int((media_tempo_conversa - minutos) * 60)
+    media_mensagens_por_conversa = filtered_df["media_mensagens_por_conversa"].mean()
+
+    # Agrupando os dados por data e local
+    grouped_df = filtered_df.groupby("data").agg(
+        respostas=('respostas', 'sum'),
+        media_conversas_por_dia=('media_conversas_por_dia', 'mean'),
+        tempo_medio_chat=('tempo_medio_chat', 'mean'),
+        total_interacoes=('total_interacoes', 'sum'),
+        avaliacao_conversa=('avaliacao_conversa', 'mean'),
+        numero_total_conversas=('numero_total_conversas', 'sum'),
+    ).reset_index()
+
+    # Criando as figuras
     fig_respostas = px.line(
-        filtered_df,
+        grouped_df,
         x="data",
         y="respostas",
         title="Número de Respostas por Dia",
         color_discrete_sequence=["#636EFA"]
     )
-    fig_respostas.update_layout(
-        plot_bgcolor="rgba(255, 255, 255, 0.9)",
-        paper_bgcolor="rgba(255, 255, 255, 0.9)",
-    )
-
+    
     fig_mapa = px.choropleth(
         filtered_df,
         geojson="https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson",
@@ -498,65 +417,40 @@ def update_graphs(start_date, end_date):
         color_continuous_scale="Blues",
         scope="south america",
     )
-    fig_mapa.update_layout(
-        plot_bgcolor="rgba(255, 255, 255, 0.9)",
-        paper_bgcolor="rgba(255, 255, 255, 0.9)",
-    )
 
     fig_media_conversas = px.line(
-        filtered_df,
+        grouped_df,
         x="data",
         y="media_conversas_por_dia",
         title="Número Médio de Conversas por Dia",
     )
-    fig_media_conversas.update_layout(
-        plot_bgcolor="rgba(255, 255, 255, 0.9)",
-        paper_bgcolor="rgba(255, 255, 255, 0.9)",
-    )
 
     fig_total_diario = px.bar(
-        filtered_df,
+        grouped_df,
         x="data",
-        y="respostas",
+        y="numero_total_conversas",
         title="Total de Conversas por Dia",
     )
-    fig_total_diario.update_layout(
-        plot_bgcolor="rgba(255, 255, 255, 0.9)",
-        paper_bgcolor="rgba(255, 255, 255, 0.9)",
-    )
-
 
     fig_tempo_medio_chat = px.line(
-        filtered_df,
+        grouped_df,
         x="data",
         y="tempo_medio_chat",
         title="Tempo Médio de um Chat",
     )
-    fig_tempo_medio_chat.update_layout(
-        plot_bgcolor="rgba(255, 255, 255, 0.9)",
-        paper_bgcolor="rgba(255, 255, 255, 0.9)",
-    )
 
     fig_total_interacoes = px.bar(
-        filtered_df,
+        grouped_df,
         x="data",
         y="total_interacoes",
         title="Total de Interações",
     )
-    fig_total_interacoes.update_layout(
-        plot_bgcolor="rgba(255, 255, 255, 0.9)",
-        paper_bgcolor="rgba(255, 255, 255, 0.9)",
-    )
 
     fig_avaliacao_conversa = px.bar(
-        filtered_df,
+        grouped_df,
         x="data",
         y="avaliacao_conversa",
         title="Avaliação da Conversa",
-    )
-    fig_avaliacao_conversa.update_layout(
-        plot_bgcolor="rgba(255, 255, 255, 0.9)",
-        paper_bgcolor="rgba(255, 255, 255, 0.9)",
     )
 
     feedback_counts = filtered_df["feedback"].value_counts().reset_index()
@@ -568,10 +462,6 @@ def update_graphs(start_date, end_date):
         y="count",
         title="Distribuição de Feedback",
     )
-    fig_feedback.update_layout(
-        plot_bgcolor="rgba(255, 255, 255, 0.9)",
-        paper_bgcolor="rgba(255, 255, 255, 0.9)",
-    )
 
     return (
         fig_respostas,
@@ -582,6 +472,9 @@ def update_graphs(start_date, end_date):
         fig_total_interacoes,
         fig_avaliacao_conversa,
         fig_feedback,
+        f"{minutos}:{segundos} min",
+        f"{media_mensagens_por_conversa:.2f}"
     )
+
 if __name__ == "__main__":
     app.run_server(debug=True, use_reloader=True)
